@@ -128,7 +128,7 @@ export const dbService = {
     const snap = await getDocs(q);
     
     // Filter out deleted items client-side to avoid requiring a composite index
-    const allSightings = snap.docs.map(d => ({ id: d.id, ...d.data() } as Sighting));
+    const allSightings = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) } as Sighting));
     const activeSightings = allSightings.filter(s => !s.deletedAt);
 
     return {

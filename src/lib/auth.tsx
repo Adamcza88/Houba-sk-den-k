@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut } from 'firebase/auth';
 import { auth, googleProvider, db, isFirebaseConfigured } from './firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -97,17 +97,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     if (!isFirebaseConfigured) return;
     try {
+      // Vynutíme výběr účtu, což může pomoci s interakcí
+      googleProvider.setCustomParameters({ prompt: 'select_account' });
+      
+      // setError(null) voláme až po pokusu, nebo v catch, abychom nerušili user gesture
       await signInWithPopup(auth, googleProvider);
+      setError(null);
     } catch (err: any) {
       console.error("Auth error:", err);
       if (err.code === 'auth/unauthorized-domain') {
         setError(`Doména ${window.location.hostname} není povolena ve Firebase. Přidejte ji v konzoli Firebase (Authentication > Settings > Authorized domains).`);
       } else if (err.code === 'auth/popup-closed-by-user') {
-        // Uživatel zavřel okno, ignorujeme nebo zobrazíme jen upozornění
         console.log("Přihlášení zrušeno uživatelem.");
+        setError(null); // Vyčistíme chybu, pokud uživatel jen zavřel okno
+      } else if (err.code === 'auth/popup-blocked' || err.message?.includes('popup-blocked')) {
+        console.warn("Popup blocked, showing instruction to user.");
+        setError("⚠️ PROHLÍŽEČ ZABLOKOVAL PŘIHLÁŠENÍ. Klikněte na ikonu 'Pop-up blocked' v pravé části adresního řádku (často ikona okna s křížkem) a zvolte 'Vždy povolit'. Poté zkuste přihlášení znovu.");
       } else {
-        // Pro ostatní chyby nezablokujeme UI, ale ukážeme alert/toast (zde zatím do konzole a alert)
-        alert(err.message || "Chyba při přihlašování.");
+        setError(err.message || "Chyba při přihlašování.");
       }
     }
   };
