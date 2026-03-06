@@ -1,0 +1,5 @@
+{
+  "name": "Houbařský Deník",
+  "description": "Osobní deník nálezů hub s fotkou, polohou, časem, popisem a druhem.",
+  "requestFramePermissions": ["camera", "geolocation"]
+}
